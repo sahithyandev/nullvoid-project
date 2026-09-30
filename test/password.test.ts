@@ -1,4 +1,5 @@
-import { expect, test } from "bun:test";
+import { afterEach, expect, setSystemTime, test } from "bun:test";
+import { attemptKeys, clear, fail, lockedFor, lockMessage } from "../src/attempts";
 import { db } from "../src/db";
 import { checkPassword, checkUsername, createUser, verifyLogin } from "../src/password";
 
@@ -28,4 +29,28 @@ test("weak, empty and bad-username inputs get a specific message", () => {
   expect(checkUsername("")).toContain("Username must be");
   expect(checkUsername("a b")).toContain("Username must be");
   expect(checkUsername("alice")).toBeNull();
+});
+
+afterEach(() => setSystemTime());
+
+test("the account locks after 5 failures and unlocks after 15 minutes", () => {
+  const keys = attemptKeys("Lock-User", "10.0.0.1");
+  for (let i = 0; i < 4; i++) fail(keys);
+  expect(lockedFor(keys)).toBe(0);
+  fail(keys);
+  expect(lockedFor(keys)).toBeGreaterThan(0);
+  expect(lockedFor(attemptKeys("lock-user", "10.0.0.2"))).toBeGreaterThan(0); // same account, other IP
+  expect(lockMessage(lockedFor(keys))).toBe("Too many attempts. Try again in 15 minutes.");
+  setSystemTime(Date.now() + 15 * 60_000 + 1);
+  expect(lockedFor(keys)).toBe(0);
+});
+
+test("the IP locks after 20 failures across accounts, and success clears the account", () => {
+  for (let i = 0; i < 20; i++) fail(attemptKeys(`ip-user-${i}`, "10.0.0.3"));
+  expect(lockedFor(attemptKeys("fresh-user", "10.0.0.3"))).toBeGreaterThan(0);
+  const keys = attemptKeys("clear-user", "10.0.0.4");
+  for (let i = 0; i < 4; i++) fail(keys);
+  clear(keys[0]);
+  fail(keys);
+  expect(lockedFor(keys)).toBe(0);
 });
