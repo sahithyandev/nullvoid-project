@@ -32,7 +32,7 @@ build step.
 
 | Part                            | Choice                                                                                                                       |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Runtime, package manager, tests | Bun (`bun install`, `bun test`)                                                                                              |
+| Runtime, package manager, tests | Bun 1.4.2 or newer (`bun install`, `bun test`)                                                                               |
 | Web framework                   | Hono, with the Bun adapter                                                                                                   |
 | Pages                           | Server-rendered with `hono/jsx` (`.tsx` files). Plain HTML, no client framework                                              |
 | Browser scripts                 | Plain `.js` files in `public/js`, served as static files                                                                     |
@@ -68,11 +68,12 @@ Each member's branch merges into `main` without touching the others'.
 
 Deliverables, all committed to `main` before splitting:
 
-**a) Skeleton.** `server.ts`, `src/app.ts` (creates the Hono app and mounts
-each member's sub-app under its own prefix), `src/config.ts` (RP name, RP ID,
-origin), `src/db.ts` (opens the database and runs every `src/schema/*.sql`
-file), an empty `src/views/` and `public/`. Each member's routes live in one
-file that exports a Hono sub-app.
+**a) Skeleton.** The project setup (`package.json`, `server.ts`, a bare
+`src/app.ts`, `public/`, dependencies, one test) is already done. Still to add:
+the mounting of each member's sub-app in `src/app.ts` under its own prefix,
+`src/config.ts` (RP name, RP ID, origin), `src/db.ts` (opens the database and
+runs every `src/schema/*.sql` file) and an empty `src/views/`. Each member's
+routes live in one file that exports a Hono sub-app.
 
 **b) Session states**, stored in the `sessions` table and read with
 `getSession(c)`:
@@ -294,5 +295,4 @@ session, and every threat row points to a test.
 ## 8. Decisions to confirm on Day 0
 
 1. Recovery mechanism: recovery codes plus password (proposed).
-2. Hash: Argon2id (decided; bcrypt is not used).
-3. Demo browser and screen reader pair.
+2. Demo browser and screen reader pair.

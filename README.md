@@ -11,6 +11,23 @@ Screen-reader support, text-to-speech prompts, audio feedback and full keyboard 
 
 Full details are in [Project Proposal.md](Project%20Proposal.md).
 
+## Prerequisites
+
+- [Bun](https://bun.sh) **1.4.2 or newer** (check with `bun --version`). It is the runtime, package manager and test runner.
+- A browser with WebAuthn support. `http://localhost` counts as a secure origin, so no TLS setup is needed.
+- For the NFC path: an NFC-capable device and a FIDO2 security key.
+
+## Getting started
+
+```sh
+bun install
+bun start      # http://localhost:3000
+bun run dev    # same, restarting on file changes
+bun run test
+```
+
+Stack: Bun, Hono (server-rendered pages), SQLite (`bun:sqlite`), `@simplewebauthn`. See [PLAN.md](PLAN.md).
+
 ## Requirements
 
 **Functional**

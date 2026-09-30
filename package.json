@@ -1,0 +1,24 @@
+{
+  "name": "nullvoid",
+  "version": "0.1.0",
+  "description": "Multi-factor authentication for visually impaired users",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "bun": ">=1.4.2"
+  },
+  "scripts": {
+    "start": "bun server.ts",
+    "dev": "bun --watch server.ts",
+    "test": "bun test ./src ./test"
+  },
+  "dependencies": {
+    "@simplewebauthn/browser": "^14.0.0",
+    "@simplewebauthn/server": "^14.0.3",
+    "hono": "^4.13.11"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.2",
+    "typescript": "^7.0.2"
+  }
+}
