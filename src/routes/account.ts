@@ -1,0 +1,7 @@
+// Owner: M5. Routes: /account/* (devices, revoke). Mounted in src/app.ts. Put every route in this file.
+import { Hono } from "hono";
+import type { AppEnv } from "../guards";
+
+const app = new Hono<AppEnv>();
+
+export default app;
