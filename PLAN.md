@@ -2,147 +2,82 @@
 
 Scope is exactly what [Project Proposal.md](Project%20Proposal.md) describes.
 Section numbers below (e.g. §3.2) refer to it. Nothing outside the proposal is
-planned.
+built: no voice authentication (§6.8), no biometric matching (the OS does it),
+no OIDC, no real email or SMS, no production deployment.
 
-Target: 4 working days, 5 members.
+Target: 4 working days, 5 members (M1 to M5).
 
-## 1. Scope
+## 1. The setup
 
-| Proposal item                                                                      | Built as                                            |
-| ---------------------------------------------------------------------------------- | --------------------------------------------------- |
-| §1.3.1 Username and password, salted hash                                          | Argon2id                                            |
-| §1.3.1 Rate limiting on failed passwords, §10 lockout                              | Per-account and per-IP counter, temporary lockout   |
-| §1.3.1 / §6.7 Second factor: passkey or NFC FIDO2 key, user chooses                | Two independent WebAuthn modules and a chooser page |
-| §1.3.1 At least one second factor enrolled before login completes                  | Enforced at the end of first-factor login           |
-| §1.3.1 Cryptographic challenge-response                                            | Fresh single-use challenge per attempt, UV required |
-| §6.1-6.5 Screen reader, text-to-speech, keyboard, audio feedback, NFC instructions | Shared front-end layer                              |
-| §6.6 No CAPTCHA / visual-only steps                                                | Rule for every page                                 |
-| §1.3.1, §7, §10 Recovery, revocation of lost device or key                         | Recovery codes, credential revocation, replacement  |
-| §8 Accessibility testing                                                           | Automated checks plus a manual test log             |
-| §10 Threats and mitigations                                                        | Each row maps to a test                             |
+The project skeleton and the shared contract are done and on `main`. Setup and
+commands are in [README.md](README.md).
 
-Not built (proposal excludes or does not mention): voice authentication (§6.8),
-biometric matching (done by the OS), OIDC, real email or SMS, production
-deployment.
+**Stack.** Bun 1.4.2+, Hono with server-rendered `hono/jsx` pages (`.tsx`),
+`bun:sqlite`, Argon2id through `Bun.password` (bcrypt is not used),
+`@simplewebauthn/server` and `/browser`, plain `.js` browser scripts in
+`public/js`. One project, no build step.
 
-### Stack (fixed; the proposal does not choose one)
+**What already exists**
 
-One project, backend and frontend together, no separate frontend app and no
-build step.
+| File | What it gives you |
+| --- | --- |
+| `src/app.ts` | Mounts each member's router. Prefixes are in the table below |
+| `src/routes/*.ts` | One empty Hono router per member, in the file named in your task list |
+| `src/config.ts` | RP name, RP ID, origin, session and challenge lifetimes |
+| `src/db.ts`, `src/schema.sql` | Database opened on start-up, all tables in the one SQL file. Delete `data/app.db` to start over |
+| `src/session.ts` | `getSession`, `startPasswordOk`, `completeLogin`, `startRecovery`, `endSession`, `endUserSessions` |
+| `src/guards.ts` | `requirePasswordOk`, `requireFull`, `requireRecovery`, `requirePasswordOkOrRecovery`. They set `userId` and `sessionId` on the context. Use `new Hono<AppEnv>()` |
+| `src/dev/fake-session.ts` | `fakeSession(state)` and `fakeUser()`: put a test request into any session state without the login pages |
+| `src/views/layout.tsx`, `public/js/a11y.js`, `public/css/style.css` | Page shell stub and the three browser functions (M4 finishes them) |
 
-| Part                            | Choice                                                                                                                       |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Runtime, package manager, tests | Bun 1.4.2 or newer (`bun install`, `bun test`)                                                                               |
-| Web framework                   | Hono, with the Bun adapter                                                                                                   |
-| Pages                           | Server-rendered with `hono/jsx` (`.tsx` files). Plain HTML, no client framework                                              |
-| Browser scripts                 | Plain `.js` files in `public/js`, served as static files                                                                     |
-| Database                        | SQLite via the built-in `bun:sqlite`                                                                                         |
-| Password hashing                | Argon2id via the built-in `Bun.password` (bcrypt is not used)                                                                |
-| WebAuthn                        | `@simplewebauthn/server` (server) and `@simplewebauthn/browser` (browser)                                                    |
-| Sessions                        | Our own: a random ID in an `HttpOnly`, `SameSite=Lax` cookie, state kept in a `sessions` table (Hono's `hono/cookie` helper) |
-| Text-to-speech                  | The browser's built-in `speechSynthesis`                                                                                     |
-| Language                        | TypeScript, run directly by Bun                                                                                              |
+**Session states:** `anonymous`, `password_ok` (password passed, second factor
+pending), `full` (both passed), `recovery` (recovered with a code; may only
+replace credentials). `completeLogin` works only from `password_ok`.
 
-`bun start` runs it on `http://localhost:3000`, a secure origin for WebAuthn.
-Dependencies stay at three packages: `hono`, `@simplewebauthn/server` and
-`@simplewebauthn/browser`. Hono also runs on Node, so the runtime can be
-swapped later if Bun causes problems.
+**Tables:** `users` (M1), `credentials` and `challenges` (M2 and M3 insert; M5
+only sets `revoked_at`), `recovery_codes` (M5), `sessions` (shared). M2 writes
+only `kind='passkey'` rows and M3 only `kind='security_key'`. Column names are
+fixed; extra columns and indexes are fine, added in `src/schema.sql` (the
+only shared file members may edit, one table each).
 
-## 2. How the work stays independent
-
-Members do not wait on each other. Three rules make that true.
-
-1. **A contract, frozen on Day 0.** The whole team spends about 3 hours
-   writing the skeleton and the contract (section 3). After that, nobody
-   changes it without telling everyone.
-2. **Separate files per member.** Each member owns a router, its views, its
-   browser scripts and its tests. Two members never edit the same file.
-3. **Each module runs alone.** `src/dev/fake-session.ts` (written on Day 0)
-   lets a member put a request into any session state, so nobody needs another
-   member's login page to test their own. WebAuthn modules are tested with a
-   software authenticator, so no hardware is needed until the final check.
-
-Each member's branch merges into `main` without touching the others'.
-
-## 3. Day 0: the contract (everyone, together)
-
-Deliverables, all committed to `main` before splitting:
-
-**a) Skeleton.** The project setup (`package.json`, `server.ts`, a bare
-`src/app.ts`, `public/`, dependencies, one test) is already done. Still to add:
-the mounting of each member's sub-app in `src/app.ts` under its own prefix,
-`src/config.ts` (RP name, RP ID, origin), `src/db.ts` (opens the database and
-runs every `src/schema/*.sql` file) and an empty `src/views/`. Each member's
-routes live in one file that exports a Hono sub-app.
-
-**b) Session states**, stored in the `sessions` table and read with
-`getSession(c)`:
-
-| State         | Meaning                                             | Set by            |
-| ------------- | --------------------------------------------------- | ----------------- |
-| `anonymous`   | nothing yet                                         | default           |
-| `password_ok` | first factor passed, second factor pending          | password module   |
-| `full`        | both factors passed                                 | `completeLogin()` |
-| `recovery`    | recovered with a code; may only enrol a replacement | recovery module   |
-
-`src/session.ts` exports, implemented on Day 0 and never changed:
-`getSession(c)`, `startPasswordOk(c, userId)`, `completeLogin(c)`,
-`startRecovery(c, userId)`, `endSession(c)` (`c` is the Hono context). Each
-`start*` and `completeLogin` issues a new session ID and deletes the old one.
-`src/guards.ts` exports the Hono middleware `requirePasswordOk`,
-`requireFull`, `requireRecovery`, which also put `userId` on the context.
-
-**c) Database tables**, one schema file per owner so files never collide:
-
-| Table            | Owner                                      | Columns                                                                                                                                            |
-| ---------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `sessions`       | Day 0                                      | `id`, `user_id`, `state`, `created_at`, `expires_at`                                                                                               |
-| `users`          | M1                                         | `id`, `username` (unique), `password_hash`, `failed_count`, `locked_until`                                                                         |
-| `credentials`    | M2 and M3 (insert), M5 (sets `revoked_at`) | `id`, `user_id`, `kind` (`passkey` or `security_key`), `credential_id`, `public_key`, `counter`, `transports`, `label`, `created_at`, `revoked_at` |
-| `challenges`     | M2 and M3                                  | `id`, `user_id`, `kind`, `challenge`, `expires_at`                                                                                                 |
-| `recovery_codes` | M5                                         | `id`, `user_id`, `code_hash`, `used_at`                                                                                                            |
-
-M2 only ever writes rows with `kind='passkey'` and M3 only `kind='security_key'`.
-Each ignores the other's rows.
-
-**d) URL map**, each prefix owned by one member:
+**URL map**, each prefix owned by one member:
 
 | Prefix                     | Owner | Pages and endpoints                                                    |
 | -------------------------- | ----- | ---------------------------------------------------------------------- |
 | `/register`, `/login`      | M1    | account creation, password form                                        |
 | `/passkey/*`               | M2    | `register/options`, `register/verify`, `login/options`, `login/verify` |
 | `/security-key/*`          | M3    | same four endpoints                                                    |
-| `/second-factor`, `/enrol` | M4    | chooser page, enrolment chooser page                                   |
+| `/`, `/second-factor`, `/enrol`, `/account` | M4 | home, chooser page, enrolment chooser page, signed-in landing page |
 | `/recover/*`, `/account/*` | M5    | recovery, device list, revoke                                          |
 
-Flow: `/login` ends in `password_ok`. If the user has no active credential,
+**Flow.** `/login` ends in `password_ok`. If the user has no active credential,
 redirect to `/enrol`, otherwise to `/second-factor`. Both pages link to
-`/passkey/...` or `/security-key/...` pages. Each of those calls
-`completeLogin(c)` on success, which redirects to `/account`.
+`/passkey/...` or `/security-key/...` pages. Those call `completeLogin(c)` on
+a successful login and redirect to `/account`. Registering a credential does
+not sign the user in: after it succeeds, redirect to `/second-factor` so they
+prove the new credential works by using it.
 
-**e) Browser contract** (`public/js/a11y.js`, written by M4 and stubbed on
-Day 0 so others can call it before it is finished, together with a plain
-`Layout` stub):
-`announce(text)` writes to the `aria-live` region, `speak(text)` uses
-text-to-speech, `feedback('success' | 'failure')` plays the audio cue. Every
-other member calls only these three, and every page is wrapped in
-the `Layout` component (`src/views/layout.tsx`) from M4, which contains the
-header, skip link and status region.
+**Browser contract.** Import only these from `/static/js/a11y.js`:
+`announce(text)` (writes to the `aria-live` region), `speak(text)`
+(text-to-speech) and `feedback('success' | 'failure')` (audio cue). Wrap every
+page in `<Layout title="...">`.
 
-**f) Shared rules**, copied from §6 and §1.3.2 into the top of this file's
-checklist (section 6).
+**How we stay independent.** Two members never edit the same file. Every
+module is tested alone with `fakeSession`. WebAuthn modules are tested with a
+software authenticator, so no hardware is needed until the final check. The
+contract above changes only with the whole team's agreement. Each branch merges
+into `main` without touching anyone else's files.
 
-## 4. Members and tasks
+## 2. Members and tasks
 
 ### M1: Username, password, rate limiting (§3.1, §10)
 
-Files: `src/schema/users.sql`, `src/password.ts`, `src/routes/login.ts`,
+Files: `src/password.ts`, `src/routes/login.ts`,
 `src/attempts.ts`, `src/views/login.tsx`, `src/views/register.tsx`, tests.
 
 1. Registration with username and password. Reject weak or empty passwords with
    a specific message.
-2. Hash with Argon2id through `Bun.password` (salted, memory-hard), not bcrypt,
-   for stronger resistance to GPU cracking. Never log passwords.
+2. Hash with Argon2id through `Bun.password`. Never log passwords.
 3. Login: compare against the hash. Use the same message and a similar response
    time for an unknown user and a wrong password.
 4. Rate limiting and temporary lockout after repeated failures, per account and
@@ -168,8 +103,8 @@ Files: `src/routes/passkey.ts`, `public/js/passkey.js`,
    explicitly as well as through the library). Check the counter does not go
    backwards, allowing zero for synced passkeys.
 5. Refuse a revoked credential even if the browser offers it.
-6. Guard: registration needs `password_ok` or `recovery`. Login needs
-   `password_ok`. On success call `completeLogin()`.
+6. Guards: registration uses `requirePasswordOkOrRecovery`, login uses
+   `requirePasswordOk`. On a successful login call `completeLogin()`.
 7. Before the device prompt, the page states in text which website is asking and
    what the device will do. Every outcome goes through `announce`, `speak` and
    `feedback`.
@@ -208,15 +143,15 @@ is accepted so that neither waits for the other.
 
 Files: `src/views/layout.tsx`, `public/css/style.css`, `public/js/a11y.js`,
 `src/views/second-factor.tsx`, `src/views/enrol.tsx`, `src/views/account.tsx`,
-`src/views/error.tsx`, `src/routes/pages.ts`, tests.
+`src/views/error.tsx`, `src/routes/pages.tsx`, tests.
 
-1. `a11y.js`: `announce`, `speak`, `feedback`. Text-to-speech is optional, off
-   by default, remembered by the browser, with a visible toggle (§7 says audio
-   is not always suitable). Audio cues are generated with the Web Audio API, so
-   no audio files are needed.
-2. Page shell: skip link, one `<h1>` per page, logical headings, an
+1. Finish `a11y.js`: `announce`, `speak`, `feedback`. Text-to-speech is optional,
+   off by default, remembered by the browser, with a visible toggle (§7 says
+   audio is not always suitable). Audio cues are generated with the Web Audio
+   API, so no audio files are needed. Keep the three function signatures.
+2. Finish the page shell: skip link, one `<h1>` per page, logical headings, an
    `aria-live="polite"` status region, visible focus, focus moved sensibly after
-   each action, sufficient contrast.
+   each action, sufficient contrast. Keep the `Layout` props.
 3. `/second-factor` and `/enrol`: the user chooses Passkey or NFC security key
    (§6.7). Prompts: "Select an authentication method", "Please authenticate
    using your device" (§6.2). Fully keyboard operable.
@@ -234,21 +169,22 @@ check passes on all pages that exist.
 
 ### M5: Recovery, revocation, testing and documents (§7, §8, §10)
 
-Files: `src/schema/recovery.sql`, `src/routes/account.ts`,
+Files: `src/routes/account.ts`,
 `src/routes/recover.ts`, `src/recovery-codes.ts`, `src/views/devices.tsx`,
 `src/views/recover*.tsx`, `docs/`, tests.
 
 1. Recovery codes: generated when the user asks for them, shown once, stored
    only as hashes, single use. A new set replaces the old one. Never log them.
 2. Device list: shows every credential with its kind and label. The user can
-   rename it and revoke it (sets `revoked_at`). Revoking also ends any other
-   session belonging to that user.
+   rename it and revoke it (sets `revoked_at`). Revoking also ends the user's
+   other sessions (`endUserSessions`).
 3. Refuse to revoke the last active credential unless the user has recovery
    codes (no lock-out trapdoor).
 4. Recovery journey (lost phone or lost NFC key): username, password and one
-   recovery code, then a `recovery` session. That session can only revoke the
-   lost credential and enrol a replacement through M2 or M3's registration
-   pages. It cannot do anything else. Recovery attempts are rate limited.
+   recovery code, then a `recovery` session (`startRecovery`). That session can
+   only revoke the lost credential and enrol a replacement through M2 or M3's
+   registration pages. It cannot do anything else. Recovery attempts are rate
+   limited.
 5. §8 testing: a manual test log in `docs/testing.md` with these categories:
    screen readers and browsers, keyboard only, text-to-speech and audio at every
    stage, the passkey path and the NFC path. Aim to include at least one
@@ -261,17 +197,16 @@ Files: `src/schema/recovery.sql`, `src/routes/account.ts`,
 Done when: a lost credential can be revoked and replaced from a `recovery`
 session, and every threat row points to a test.
 
-## 5. Schedule
+## 3. Schedule
 
-| Day      | Everyone                                                                                                       | Notes                                               |
-| -------- | -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| 0 (half) | Contract and skeleton (section 3)                                                                              | Nobody starts a module until it merges              |
-| 1        | M1 to M5 build their modules alone                                                                             | Push small commits to own branches, merge daily     |
-| 2        | Finish modules with tests. M3 tries the real NFC key as early as possible                                      | Hardware surprises land here, not on the last day   |
-| 3        | Integration: full flows on `main`. M4 runs the page check across all routes. Everyone fixes their own failures | First time all modules run together                 |
-| 4        | M5 leads manual testing with a screen reader and a keyboard. Final report and demo                             | Freeze code at the start of the day, bug fixes only |
+| Day | Everyone                                                                                                       | Notes                                               |
+| --- | -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| 1   | M1 to M5 build their modules alone                                                                             | Push small commits to own branches, merge daily     |
+| 2   | Finish modules with tests. M3 tries the real NFC key as early as possible                                      | Hardware surprises land here, not on the last day   |
+| 3   | Integration: full flows on `main`. M4 runs the page check across all routes. Everyone fixes their own failures | First time all modules run together                 |
+| 4   | M5 leads manual testing with a screen reader and a keyboard. Final report and demo                             | Freeze code at the start of the day, bug fixes only |
 
-## 6. Checklist for every pull request
+## 4. Checklist for every pull request
 
 - No secrets in logs: passwords, recovery codes and PINs.
 - Fresh single-use challenge, UV required, both checked on the server.
@@ -282,17 +217,17 @@ session, and every threat row points to a test.
 - Keyboard only works on the new page.
 - A test that fails if the security check is removed.
 
-## 7. Risks
+## 5. Risks
 
 | Risk                                             | Handling                                                                                                |
 | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
-| Someone changes the contract after Day 0         | Contract changes need the whole team's agreement, in the group chat                                     |
-| No NFC key or NFC-capable device                 | Confirm on Day 0 who owns one. Otherwise use the software authenticator and show NFC in a recorded demo |
+| Someone changes the contract                     | Contract changes need the whole team's agreement, in the group chat                                     |
+| No NFC key or NFC-capable device                 | Confirm on Day 1 who owns one. Otherwise use the software authenticator and show NFC in a recorded demo |
 | Screen reader behaviour differs by system        | Choose one browser and screen reader pair for the demo and record the others as known limits (§7)       |
 | Integration bugs on Day 3                        | The fake-session helper and the shared contract tests should catch most earlier                         |
 | Recovery mechanism not specified in the proposal | Recovery codes are our choice. Record it as an assumption in the report                                 |
 
-## 8. Decisions to confirm on Day 0
+## 6. Decisions to confirm before Day 1
 
 1. Recovery mechanism: recovery codes plus password (proposed).
 2. Demo browser and screen reader pair.
