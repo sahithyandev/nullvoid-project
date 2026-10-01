@@ -1,6 +1,6 @@
 // Owner: M1. Routes: /register and /login. Mounted in src/app.ts. Put every route in this file.
 import { Hono } from "hono";
-import { getConnInfo } from "hono/bun";
+import { getConnInfo } from "@hono/bun";
 import type { AppEnv } from "../guards";
 import { startPasswordOk } from "../session";
 import { db } from "../db";
