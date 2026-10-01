@@ -7,11 +7,11 @@ const CSS = `
 .auth { max-width: 24rem; }
 .auth form { display: grid; gap: 1rem; }
 .auth label { display: block; font-weight: 600; margin-bottom: .25rem; }
-.auth input:not([type=checkbox]) { box-sizing: border-box; width: 100%; min-height: 2.75rem; padding: .25rem .5rem; font: inherit; }
+.auth input:not([type=checkbox]) { box-sizing: border-box; width: 100%; min-height: 2.75rem; padding: .25rem .5rem; font: inherit; border: 1px solid GrayText; border-radius: .25rem; }
 .auth .hint { display: block; margin-top: .25rem; font-size: .95rem; opacity: .8; }
 .auth .show { display: flex; align-items: center; gap: .5rem; margin-top: .5rem; }
 .auth .show input { width: 1.25rem; height: 1.25rem; margin: 0; }
-.auth button { min-height: 2.75rem; padding: .25rem 1rem; font: inherit; font-weight: 600; cursor: pointer; }
+.auth button { justify-self: start; min-height: 2.75rem; padding: .25rem 1.5rem; font: inherit; font-weight: 700; cursor: pointer; color: Canvas; background: CanvasText; border: 0; border-radius: 2rem; }
 .auth .error { margin: 0 0 1rem; padding-left: .75rem; border-left: .25rem solid currentColor; font-weight: 600; }
 .auth input[aria-invalid=true] { border: 2px solid currentColor; }
 `;
