@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { serveStatic } from "hono/bun";
+import { serveStatic } from "@hono/bun";
 import type { AppEnv } from "./guards";
 import pages from "./routes/pages";
 import login from "./routes/login";
