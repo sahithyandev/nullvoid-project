@@ -1,6 +1,12 @@
 // Owner: M4. The chooser pages (/second-factor, /enrol) and the signed-in landing page (/account).
 import { Layout } from "./layout";
 
+const SignOut = () => (
+  <form method="post" action="/logout">
+    <button type="submit">Sign out</button>
+  </form>
+);
+
 function Chooser({ title, intro, passkey, secKey }: { title: string; intro: string; passkey: string; secKey: string }) {
   return (
     <Layout title={title}>
@@ -14,6 +20,7 @@ function Chooser({ title, intro, passkey, secKey }: { title: string; intro: stri
           <a href={secKey}>NFC security key</a>: hold a FIDO2 security key against your device.
         </li>
       </ul>
+      <SignOut />
     </Layout>
   );
 }
@@ -37,5 +44,6 @@ export const AccountPage = () => (
         <a href="/account/recovery-codes">Recovery codes</a>
       </li>
     </ul>
+    <SignOut />
   </Layout>
 );

@@ -27,3 +27,20 @@ for (const [path, allowed, links] of cases) {
     }
   });
 }
+
+test("POST /logout ends the session from any state", async () => {
+  for (const state of ["password_ok", "full", "recovery"] as const) {
+    const headers = fakeSession(state);
+    const res = await app.request("/logout", { method: "POST", headers });
+    expect([res.status, res.headers.get("location")]).toEqual([303, "/login"]);
+    expect((await app.request("/account", { headers })).status).toBe(303);
+    expect((await app.request("/second-factor", { headers })).status).toBe(303);
+  }
+  expect((await app.request("/logout", { method: "POST" })).status).toBe(303);
+});
+
+test("the pages offer a sign out button", async () => {
+  for (const [path, state] of [["/second-factor", "password_ok"], ["/enrol", "password_ok"], ["/account", "full"]] as const) {
+    expect(await (await get(path, state)).text()).toContain('action="/logout"');
+  }
+});
