@@ -1,5 +1,4 @@
-/* Stub by Day 0, owned by M4. */
-body { font-family: system-ui, sans-serif; font-size: 1.125rem; line-height: 1.5; margin: 0 auto; max-width: 40rem; padding: 1rem; }
-:focus-visible { outline: 3px solid #005fcc; outline-offset: 2px; }
+:root { --container-max: 40rem; --background: light-dark(#fff, #222226); }
 .skip-link { position: absolute; left: -999px; }
-.skip-link:focus { left: 0; background: #fff; padding: .5rem; }
+.skip-link:focus { left: 0; }
+label:has(input[type=checkbox]) { margin-block-start: var(--space-2); }

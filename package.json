@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@hono/bun": "^1.0.0",
+    "@knadh/oat": "^0.8.0",
     "@simplewebauthn/browser": "^14.0.0",
     "@simplewebauthn/server": "^14.0.3",
     "hono": "^4.13.11"
