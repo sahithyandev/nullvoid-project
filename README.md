@@ -26,7 +26,17 @@ bun run dev    # same, restarting on file changes
 bun run test
 ```
 
-Stack: Bun, Hono (server-rendered pages), SQLite (`bun:sqlite`), `@simplewebauthn`. See [PLAN.md](PLAN.md).
+Stack: Bun, Hono (server-rendered pages), SQLite (`bun:sqlite`), `@simplewebauthn`, [Oat](https://oat.ink) for UI. See [PLAN.md](PLAN.md).
+
+## UI
+
+Pages are styled by [Oat](https://oat.ink) (`@knadh/oat`), a classless library that styles semantic HTML (`<button>`, `<input>`, `<dialog>`, ...) and follows the system light/dark setting.
+
+- It is self-hosted: `src/app.ts` serves the package from `node_modules` at `/static/oat/`, so no third-party script loads on an auth page.
+- `Layout` (`src/views/layout.tsx`) loads `oat.min.css` and `oat.min.js` once, so every page gets them.
+- Write plain semantic HTML and use Oat's attributes (`data-field`, `data-hint`, `role="alert" data-variant="error"`, `class="container"`) instead of custom classes.
+- `public/css/style.css` loads after Oat and holds only the few overrides Oat lacks: container width, the dark background and the skip link. Keep it minimal.
+- Oat is pre-v1 and may break between releases. Check its changelog before upgrading.
 
 ## Requirements
 
