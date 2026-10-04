@@ -129,3 +129,17 @@ test("another user's passkey and malformed bodies are refused", async () => {
   expect((await post("verify", headers, { nonsense: true })).status).toBe(400);
   expect((await app.request("/passkey/login/verify", { method: "POST", headers, body: "not json" })).status).toBe(400);
 });
+
+test("the page names the website and says what the device will do, and is guarded", async () => {
+  const anon = await app.request("/passkey/login");
+  expect([anon.status, anon.headers.get("location")]).toEqual([303, "/login"]);
+  expect((await app.request("/passkey/login", { headers: fakeSession("full") })).status).toBe(303);
+
+  const res = await app.request("/passkey/login", { headers: fakeSession("password_ok") });
+  expect(res.status).toBe(200);
+  const html = await res.text();
+  expect(html).toContain(`${config.rpName} (${config.rpID}) is asking you to sign in with your passkey`);
+  expect(html).toContain("fingerprint, face or screen lock");
+  expect(html).toContain("/static/js/passkey-login.js");
+  expect((await app.request("/static/js/passkey-login.js")).status).toBe(200);
+});

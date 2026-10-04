@@ -5,6 +5,7 @@ import { config } from "../config";
 import { db } from "../db";
 import { requirePasswordOk, type AppEnv } from "../guards";
 import { completeLogin } from "../session";
+import { PasskeyLoginPage } from "../views/passkey-login";
 
 const app = new Hono<AppEnv>();
 app.use("/login/*", requirePasswordOk);
@@ -16,6 +17,8 @@ const UNVERIFIED = "Your device's response could not be verified. Please try aga
 const NO_PASSKEY = "You have no active passkey. Please choose another method.";
 const REVOKED = "This passkey is not active on your account. Please choose another method.";
 const CLONED = "This passkey's sign-in count went backwards, so it was refused.";
+
+app.get("/login", (c) => c.html(PasskeyLoginPage()));
 
 app.post("/login/options", async (c) => {
   const userId = c.get("userId");
@@ -59,7 +62,7 @@ app.post("/login/verify", async (c) => {
 
   // Only this user's active passkeys: a revoked credential is refused even if the browser offers it.
   const stored = db
-    .query<{ id: number; credential_id: string; public_key: Uint8Array; counter: number }, [unknown, number]>(
+    .query<{ id: number; credential_id: string; public_key: Uint8Array<ArrayBuffer>; counter: number }, [string | null, number]>(
       "SELECT id, credential_id, public_key, counter FROM credentials WHERE credential_id = ? AND user_id = ? AND kind = 'passkey' AND revoked_at IS NULL",
     )
     .get(typeof body?.id === "string" ? body.id : null, userId);
