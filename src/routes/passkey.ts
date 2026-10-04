@@ -2,9 +2,11 @@
 import { Hono } from "hono";
 import type { AppEnv } from "../guards";
 import register from "./passkey-register";
+import login from "./passkey-login";
 
 const app = new Hono<AppEnv>();
 
 app.route("/", register);
+app.route("/", login);
 
 export default app;
