@@ -4,6 +4,7 @@ import { generateRegistrationOptions, verifyRegistrationResponse, type Registrat
 import { config } from "../config";
 import { db } from "../db";
 import { requirePasswordOkOrRecovery, type AppEnv } from "../guards";
+import { PasskeyRegisterPage } from "../views/passkey-register";
 
 const app = new Hono<AppEnv>();
 app.use("/register/*", requirePasswordOkOrRecovery);
@@ -13,6 +14,8 @@ const DUPLICATE = "This device already has a passkey for this account.";
 const WRONG_SITE = "This response came from a different website, so it was refused.";
 const NO_UV = "Your device did not confirm it was you with a fingerprint, face or screen lock. Please try again.";
 const UNVERIFIED = "Your device's response could not be verified. Please try again.";
+
+app.get("/register", (c) => c.html(PasskeyRegisterPage()));
 
 app.post("/register/options", async (c) => {
   const userId = c.get("userId");

@@ -108,3 +108,17 @@ test("a revoked passkey is not excluded, and malformed bodies are refused", asyn
   const bad = await app.request("/passkey/register/verify", { method: "POST", headers, body: "not json" });
   expect(bad.status).toBe(400);
 });
+
+test("the page names the website and says what the device will do, and is guarded", async () => {
+  const anon = await app.request("/passkey/register");
+  expect([anon.status, anon.headers.get("location")]).toEqual([303, "/login"]);
+  expect((await app.request("/passkey/register", { headers: fakeSession("full") })).status).toBe(303);
+
+  const res = await app.request("/passkey/register", { headers: fakeSession("password_ok") });
+  expect(res.status).toBe(200);
+  const html = await res.text();
+  expect(html).toContain(`${config.rpName} (${config.rpID}) is asking to create a passkey`);
+  expect(html).toContain("fingerprint, face or screen lock");
+  expect(html).toContain("/static/js/passkey-register.js");
+  expect((await app.request("/static/js/passkey-register.js")).status).toBe(200);
+});
