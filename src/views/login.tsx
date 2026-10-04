@@ -12,13 +12,15 @@ export function ErrorBox({ error }: { error?: string }) {
 /** "Show password" checkbox, hidden until the script runs so it never appears dead. */
 export function ShowPassword() {
   const js = `const t = document.getElementById("show-password");
-t.parentElement.hidden = false;
+t.closest("div").hidden = false;
 t.addEventListener("change", () => { document.getElementById("password").type = t.checked ? "text" : "password"; });`;
   return (
     <>
       <div hidden>
-        <input id="show-password" type="checkbox" />
-        <label for="show-password">Show password</label>
+        <label>
+          <input id="show-password" type="checkbox" />
+          Show password
+        </label>
       </div>
       <script type="module" dangerouslySetInnerHTML={{ __html: js }} />
     </>

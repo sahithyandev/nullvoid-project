@@ -1,3 +1,4 @@
 :root { --container-max: 40rem; --background: light-dark(#fff, #222226); }
 .skip-link { position: absolute; left: -999px; }
 .skip-link:focus { left: 0; }
+label:has(input[type=checkbox]) { margin-block-start: var(--space-2); }
