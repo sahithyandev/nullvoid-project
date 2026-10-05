@@ -50,7 +50,7 @@ export async function runWithNfcGuidance(action) {
       }, TIMEOUT_MS);
     });
     const credential = await Promise.race([actionPromise, timeoutPromise]);
-    report("Security key detected.", "success");
+    report("Security key interaction completed.", "success");
     return credential;
   } catch (error) {
     const cancelled = error?.name === "NotAllowedError" || error?.name === "AbortError";
