@@ -1,6 +1,6 @@
 // Owner: M3. Routes: /security-key/*. Mounted in src/app.ts. Put every route in this file.
 import { Hono } from "hono";
-import { generateRegistrationOptions } from "@simplewebauthn/server";
+import { generateRegistrationOptions, verifyRegistrationResponse, type RegistrationResponseJSON } from "@simplewebauthn/server";
 import { config } from "../config";
 import { db } from "../db";
 import { requirePasswordOkOrRecovery, type AppEnv } from "../guards";
@@ -8,6 +8,13 @@ import { SecurityKeyRegisterPage } from "../views/security-key-register";
 
 const app = new Hono<AppEnv>();
 app.use("/register/*", requirePasswordOkOrRecovery);
+
+const EXPIRED = "This request has expired or was already used. Please start again.";
+const DUPLICATE = "This security key is already registered to an account.";
+const SAVE_FAILED = "The security key could not be saved. Please try again.";
+const WRONG_SITE = "This response came from a different website, so it was refused.";
+const NO_UV = "Your security key did not confirm it was you. Please complete its PIN or verification step and try again.";
+const UNVERIFIED = "Your security key's response could not be verified. Please try again.";
 
 app.get("/register", (c) => c.html(SecurityKeyRegisterPage()));
 
@@ -39,6 +46,55 @@ app.post("/register/options", async (c) => {
     Date.now() + config.challengeTtlMs,
   );
   return c.json(options);
+});
+
+app.post("/register/verify", async (c) => {
+  const userId = c.get("userId");
+  const fail = (status: 400 | 409 | 500, reason: string) => c.json({ ok: false, reason }, status);
+
+  let body: RegistrationResponseJSON;
+  try {
+    body = await c.req.json();
+  } catch {
+    return fail(400, UNVERIFIED);
+  }
+
+  // Delete before verification so this challenge is single-use even when verification fails.
+  const row = db
+    .query<{ challenge: string; expires_at: number }, [number]>(
+      "DELETE FROM challenges WHERE user_id = ? AND kind = 'security_key' RETURNING challenge, expires_at",
+    )
+    .get(userId);
+  if (!row || row.expires_at <= Date.now()) return fail(400, EXPIRED);
+
+  let info;
+  try {
+    const result = await verifyRegistrationResponse({
+      response: body,
+      expectedChallenge: row.challenge,
+      expectedOrigin: config.origin,
+      expectedRPID: config.rpID,
+      requireUserVerification: true,
+    });
+    info = result.verified ? result.registrationInfo : undefined;
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "";
+    return fail(400, /origin|RP ID/i.test(message) ? WRONG_SITE : /user verif/i.test(message) ? NO_UV : UNVERIFIED);
+  }
+  if (!info) return fail(400, UNVERIFIED);
+  if (!info.userVerified) return fail(400, NO_UV);
+
+  const { credential } = info;
+  const transports = credential.transports ?? [];
+  try {
+    db.query(
+      "INSERT INTO credentials (user_id, kind, credential_id, public_key, counter, transports, created_at) VALUES (?, 'security_key', ?, ?, ?, ?, ?)",
+    ).run(userId, credential.id, credential.publicKey, credential.counter, JSON.stringify(transports), Date.now());
+  } catch (e) {
+    if (e instanceof Error && /UNIQUE constraint failed: credentials\.credential_id/i.test(e.message)) return fail(409, DUPLICATE);
+    return fail(500, SAVE_FAILED);
+  }
+  return c.json({ ok: true, redirect: "/second-factor" });
 });
 
 export default app;
