@@ -1,13 +1,15 @@
 // Owner: M3. Routes: /security-key/*. Mounted in src/app.ts. Put every route in this file.
 import { Hono } from "hono";
-import { generateRegistrationOptions, verifyRegistrationResponse, type RegistrationResponseJSON } from "@simplewebauthn/server";
+import { generateAuthenticationOptions, generateRegistrationOptions, verifyRegistrationResponse, type RegistrationResponseJSON } from "@simplewebauthn/server";
 import { config } from "../config";
 import { db } from "../db";
-import { requirePasswordOkOrRecovery, type AppEnv } from "../guards";
+import { requirePasswordOk, requirePasswordOkOrRecovery, type AppEnv } from "../guards";
+import { SecurityKeyLoginPage } from "../views/security-key-login";
 import { SecurityKeyRegisterPage } from "../views/security-key-register";
 
 const app = new Hono<AppEnv>();
 app.use("/register/*", requirePasswordOkOrRecovery);
+app.use("/login/*", requirePasswordOk);
 
 const EXPIRED = "This request has expired or was already used. Please start again.";
 const DUPLICATE = "This security key is already registered to an account.";
@@ -15,6 +17,7 @@ const SAVE_FAILED = "The security key could not be saved. Please try again.";
 const WRONG_SITE = "This response came from a different website, so it was refused.";
 const NO_UV = "Your security key did not confirm it was you. Please complete its PIN or verification step and try again.";
 const UNVERIFIED = "Your security key's response could not be verified. Please try again.";
+const NO_SECURITY_KEY = "You have no active security key. Please choose another method.";
 
 app.get("/register", (c) => c.html(SecurityKeyRegisterPage()));
 
@@ -95,6 +98,33 @@ app.post("/register/verify", async (c) => {
     return fail(500, SAVE_FAILED);
   }
   return c.json({ ok: true, redirect: "/second-factor" });
+});
+
+app.get("/login", (c) => c.html(SecurityKeyLoginPage()));
+
+app.post("/login/options", async (c) => {
+  const userId = c.get("userId");
+  const active = db
+    .query<{ credential_id: string; transports: string | null }, [number]>(
+      "SELECT credential_id, transports FROM credentials WHERE user_id = ? AND kind = 'security_key' AND revoked_at IS NULL",
+    )
+    .all(userId);
+  if (active.length === 0) return c.json({ ok: false, reason: NO_SECURITY_KEY }, 400);
+
+  const options = await generateAuthenticationOptions({
+    rpID: config.rpID,
+    userVerification: "required",
+    allowCredentials: active.map((row) => ({ id: row.credential_id, transports: row.transports ? JSON.parse(row.transports) : undefined })),
+  });
+
+  // One open security-key challenge per user, so every attempt starts fresh.
+  db.query("DELETE FROM challenges WHERE user_id = ? AND kind = 'security_key'").run(userId);
+  db.query("INSERT INTO challenges (user_id, kind, challenge, expires_at) VALUES (?, 'security_key', ?, ?)").run(
+    userId,
+    options.challenge,
+    Date.now() + config.challengeTtlMs,
+  );
+  return c.json(options);
 });
 
 export default app;
