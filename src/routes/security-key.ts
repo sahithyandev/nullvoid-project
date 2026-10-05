@@ -1,9 +1,17 @@
 // Owner: M3. Routes: /security-key/*. Mounted in src/app.ts. Put every route in this file.
 import { Hono } from "hono";
-import { generateAuthenticationOptions, generateRegistrationOptions, verifyRegistrationResponse, type RegistrationResponseJSON } from "@simplewebauthn/server";
+import {
+  generateAuthenticationOptions,
+  generateRegistrationOptions,
+  verifyAuthenticationResponse,
+  verifyRegistrationResponse,
+  type AuthenticationResponseJSON,
+  type RegistrationResponseJSON,
+} from "@simplewebauthn/server";
 import { config } from "../config";
 import { db } from "../db";
 import { requirePasswordOk, requirePasswordOkOrRecovery, type AppEnv } from "../guards";
+import { completeLogin } from "../session";
 import { SecurityKeyLoginPage } from "../views/security-key-login";
 import { SecurityKeyRegisterPage } from "../views/security-key-register";
 
@@ -18,6 +26,9 @@ const WRONG_SITE = "This response came from a different website, so it was refus
 const NO_UV = "Your security key did not confirm it was you. Please complete its PIN or verification step and try again.";
 const UNVERIFIED = "Your security key's response could not be verified. Please try again.";
 const NO_SECURITY_KEY = "You have no active security key. Please choose another method.";
+const REVOKED = "This security key is not active on your account. Please choose another method.";
+const CLONED = "This security key's sign-in count went backwards, so it was refused.";
+const LOGIN_SAVE_FAILED = "The security key sign-in could not be completed. Please try again.";
 
 app.get("/register", (c) => c.html(SecurityKeyRegisterPage()));
 
@@ -125,6 +136,71 @@ app.post("/login/options", async (c) => {
     Date.now() + config.challengeTtlMs,
   );
   return c.json(options);
+});
+
+app.post("/login/verify", async (c) => {
+  const userId = c.get("userId");
+  const fail = (reason: string, status: 400 | 500 = 400) => c.json({ ok: false, reason }, status);
+
+  let body: AuthenticationResponseJSON;
+  try {
+    body = await c.req.json();
+  } catch {
+    return fail(UNVERIFIED);
+  }
+
+  // Delete before verification so a challenge is single-use even when verification fails.
+  let row;
+  try {
+    row = db
+      .query<{ challenge: string; expires_at: number }, [number]>(
+        "DELETE FROM challenges WHERE user_id = ? AND kind = 'security_key' RETURNING challenge, expires_at",
+      )
+      .get(userId);
+  } catch {
+    return fail(LOGIN_SAVE_FAILED, 500);
+  }
+  if (!row || row.expires_at <= Date.now()) return fail(EXPIRED);
+
+  let stored;
+  try {
+    stored = db
+      .query<{ id: number; credential_id: string; public_key: Uint8Array<ArrayBuffer>; counter: number }, [string | null, number]>(
+        "SELECT id, credential_id, public_key, counter FROM credentials WHERE credential_id = ? AND user_id = ? AND kind = 'security_key' AND revoked_at IS NULL",
+      )
+      .get(typeof body?.id === "string" ? body.id : null, userId);
+  } catch {
+    return fail(LOGIN_SAVE_FAILED, 500);
+  }
+  if (!stored) return fail(REVOKED);
+
+  let info;
+  try {
+    const result = await verifyAuthenticationResponse({
+      response: body,
+      expectedChallenge: row.challenge,
+      expectedOrigin: config.origin,
+      expectedRPID: config.rpID,
+      credential: { id: stored.credential_id, publicKey: stored.public_key, counter: stored.counter },
+      requireUserVerification: true,
+    });
+    info = result.verified ? result.authenticationInfo : undefined;
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "";
+    return fail(/origin|RP ID/i.test(message) ? WRONG_SITE : /user verif/i.test(message) ? NO_UV : /counter/i.test(message) ? CLONED : UNVERIFIED);
+  }
+  if (!info) return fail(UNVERIFIED);
+  if (!info.userVerified) return fail(NO_UV);
+  // The counter must increase. Synced credentials may continue to report 0.
+  if (info.newCounter <= stored.counter && !(info.newCounter === 0 && stored.counter === 0)) return fail(CLONED);
+
+  try {
+    db.query("UPDATE credentials SET counter = ? WHERE id = ?").run(info.newCounter, stored.id);
+  } catch {
+    return fail(LOGIN_SAVE_FAILED, 500);
+  }
+  completeLogin(c);
+  return c.json({ ok: true, redirect: "/account" });
 });
 
 export default app;
