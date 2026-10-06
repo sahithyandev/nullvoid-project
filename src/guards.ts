@@ -25,3 +25,5 @@ export const requireFull = requireState("full");
 export const requireRecovery = requireState("recovery");
 /** For registering a passkey or key: the first enrolment, or a replacement after recovery. */
 export const requirePasswordOkOrRecovery = requireState("password_ok", "recovery");
+/** For the device list: a signed-in user, or one who recovered and needs to revoke a lost credential. */
+export const requireFullOrRecovery = requireState("full", "recovery");
