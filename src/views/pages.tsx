@@ -49,14 +49,20 @@ export const EnrolPage = () => (
 export const AccountPage = () => (
   <Layout title="Your account">
     <p>You are signed in.</p>
-    <ul>
-      <li>
-        <a href="/account/devices">Your devices</a>
-      </li>
-      <li>
-        <a href="/account/recovery-codes">Recovery codes</a>
-      </li>
-    </ul>
+    <section class="card vstack">
+      <h2>Sign-in methods</h2>
+      <p>See the passkeys and security keys on your account. Rename or revoke them.</p>
+      <p>
+        <a href="/account/devices" class="button">Manage devices</a>
+      </p>
+    </section>
+    <section class="card vstack">
+      <h2>Recovery</h2>
+      <p>Create codes to get back in if you lose all your devices. Keep them somewhere safe.</p>
+      <p>
+        <a href="/account/recovery-codes" class="button outline">Manage recovery codes</a>
+      </p>
+    </section>
     <SignOut />
   </Layout>
 );
