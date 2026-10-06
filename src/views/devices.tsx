@@ -8,11 +8,11 @@ export function DevicesPage({ devices, error }: { devices: Device[]; error?: str
     <Layout title="Your devices">
       {error && <p role="alert">{error}</p>}
       {devices.length === 0 && <p>You have no passkeys or security keys.</p>}
-      <ul>
+      <div class="vstack">
         {devices.map((d) => {
           const name = d.label || "Unnamed";
           return (
-            <li>
+            <article class="card vstack">
               <h2>{name}</h2>
               <p>
                 {d.kind === "passkey" ? "Passkey" : "Security key"}, added {new Date(d.created_at).toISOString().slice(0, 10)}
@@ -20,7 +20,7 @@ export function DevicesPage({ devices, error }: { devices: Device[]; error?: str
               </p>
               {!d.revoked_at && (
                 <>
-                  <form method="post" action={`/account/devices/${d.id}/rename`}>
+                  <form class="vstack" method="post" action={`/account/devices/${d.id}/rename`}>
                     <label>
                       New name for {name}
                       <input type="text" name="label" maxlength={64} required />
@@ -28,14 +28,14 @@ export function DevicesPage({ devices, error }: { devices: Device[]; error?: str
                     <button type="submit">Rename</button>
                   </form>
                   <form method="post" action={`/account/devices/${d.id}/revoke`}>
-                    <button type="submit">Revoke {name}</button>
+                    <button type="submit" data-variant="danger">Revoke {name}</button>
                   </form>
                 </>
               )}
-            </li>
+            </article>
           );
         })}
-      </ul>
+      </div>
       <p>
         <a href="/account">Back to your account</a>
       </p>
