@@ -10,6 +10,7 @@ import recover from "./routes/recover";
 
 const app = new Hono<AppEnv>();
 
+app.use("/static/oat/*", serveStatic({ root: "./node_modules/@knadh/oat", rewriteRequestPath: (p) => p.replace(/^\/static\/oat/, "") }));
 app.use("/static/*", serveStatic({ root: "./public", rewriteRequestPath: (p) => p.replace(/^\/static/, "") }));
 
 // One line per member. Prefixes are fixed by the contract in PLAN.md.

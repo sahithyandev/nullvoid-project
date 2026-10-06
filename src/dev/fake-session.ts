@@ -2,6 +2,7 @@
 //   const res = await app.request("/passkey/login/options", { method: "POST", headers: await fakeSession("password_ok") });
 import { db } from "../db";
 import { config } from "../config";
+import { SoftwareAuthenticator } from "./authenticator";
 
 let counter = 0;
 
@@ -19,4 +20,13 @@ export function fakeSession(state: "password_ok" | "full" | "recovery", userId =
     id, userId, state, now, now + config.sessionTtlMs[state],
   );
   return { cookie: `sid=${id}` };
+}
+
+/** Puts an active credential row in the database and returns the authenticator that can sign in with it. */
+export function fakeCredential(userId: number, kind: "passkey" | "security_key" = "passkey"): SoftwareAuthenticator {
+  const key = new SoftwareAuthenticator({ attachment: kind === "passkey" ? "platform" : "cross-platform" });
+  db.query("INSERT INTO credentials (user_id, kind, credential_id, public_key, counter, created_at) VALUES (?, ?, ?, ?, 0, ?)").run(
+    userId, kind, key.credentialIdB64, key.cosePublicKey(), Date.now(),
+  );
+  return key;
 }
