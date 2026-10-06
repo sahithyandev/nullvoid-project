@@ -6,9 +6,10 @@ import { SoftwareAuthenticator } from "./authenticator";
 
 let counter = 0;
 
-/** Creates a bare user row for tests. The password hash is a placeholder. */
-export function fakeUser(username = `user${++counter}`): number {
-  db.query("INSERT INTO users (username, password_hash) VALUES (?, 'x')").run(username);
+/** Creates a user row for tests. With a password it gets a real Argon2id hash, otherwise a placeholder. */
+export function fakeUser(username = `user${++counter}`, password?: string): number {
+  const hash = password === undefined ? "x" : Bun.password.hashSync(password, { algorithm: "argon2id" });
+  db.query("INSERT INTO users (username, password_hash) VALUES (?, ?)").run(username, hash);
   return db.query<{ id: number }, [string]>("SELECT id FROM users WHERE username = ?").get(username)!.id;
 }
 
