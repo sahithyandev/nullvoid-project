@@ -1,4 +1,4 @@
-// Owner: M5. Routes: /account/devices. Mounted by src/routes/account.ts.
+// Routes: /account/devices. Mounted by src/routes/account.ts.
 import { Hono } from "hono";
 import { requireFullOrRecovery, type AppEnv } from "../guards";
 import { db } from "../db";

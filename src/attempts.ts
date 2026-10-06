@@ -1,4 +1,4 @@
-// Owner: M1. In-memory login limiter, per account name and per IP. Resets on restart.
+// In-memory login limiter, per account name and per IP. Resets on restart.
 const WINDOW_MS = 15 * 60_000;
 const LOCK_MS = 15 * 60_000;
 const LIMITS = { user: 5, ip: 20 };

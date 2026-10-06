@@ -1,4 +1,4 @@
-// Owner: M2. The passkey login page. The script is public/js/passkey-login.js.
+// The passkey login page. The script is public/js/passkey-login.js.
 import { config } from "../config";
 import { Layout } from "./layout";
 

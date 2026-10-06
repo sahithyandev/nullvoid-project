@@ -1,4 +1,4 @@
-// Owner: M1. Password rules, hashing and checking. Never log a password.
+// Password rules, hashing and checking. Never log a password.
 import { db } from "./db";
 
 const hash = (password: string) => Bun.password.hash(password, { algorithm: "argon2id" });

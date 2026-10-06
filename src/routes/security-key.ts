@@ -1,4 +1,4 @@
-// Owner: M3. Routes: /security-key/*. Mounted in src/app.ts. Put every route in this file.
+// Routes: /security-key/*. Mounted in src/app.ts. Put every route in this file.
 import { Hono } from "hono";
 import {
   generateAuthenticationOptions,

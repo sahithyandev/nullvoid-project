@@ -1,4 +1,4 @@
-// Owner: M4. Routes: /, /second-factor, /enrol, /account (the landing page). Mounted in src/app.ts.
+// Routes: /, /second-factor, /enrol, /account (the landing page). Mounted in src/app.ts.
 import { Hono } from "hono";
 import { requireFull, requirePasswordOk, requirePasswordOkOrRecovery, type AppEnv } from "../guards";
 import { endSession } from "../session";

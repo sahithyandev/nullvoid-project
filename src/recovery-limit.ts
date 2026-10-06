@@ -1,4 +1,4 @@
-// Owner: M5. Limiter for /recover only, separate from src/attempts.ts. In memory, resets on restart.
+// Limiter for /recover only, separate from src/attempts.ts. In memory, resets on restart.
 const WINDOW_MS = 15 * 60_000;
 const LOCK_MS = 15 * 60_000;
 const LIMITS = { user: 5, ip: 20 };

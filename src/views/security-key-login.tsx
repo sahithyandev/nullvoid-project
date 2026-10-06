@@ -1,4 +1,4 @@
-// Owner: M3. The security-key login page. The script is public/js/security-key.js.
+// The security-key login page. The script is public/js/security-key.js.
 import { config } from "../config";
 import { Layout } from "./layout";
 

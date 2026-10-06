@@ -1,4 +1,4 @@
-// Owner: M5. Routes: /recover/*. Mounted in src/app.ts. Put every route in this file.
+// Routes: /recover/*. Mounted in src/app.ts. Put every route in this file.
 import { Hono } from "hono";
 import { getConnInfo } from "@hono/bun";
 import type { AppEnv } from "../guards";

@@ -1,4 +1,4 @@
-// Owner: M4. The chooser pages (/second-factor, /enrol) and the signed-in landing page (/account).
+// The chooser pages (/second-factor, /enrol) and the signed-in landing page (/account).
 import { Layout } from "./layout";
 
 const SignOut = () => (

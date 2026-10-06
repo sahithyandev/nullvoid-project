@@ -1,4 +1,4 @@
-// Stub by Day 0, owned by M4. Every page is wrapped in <Layout>. Keep these props.
+// Every page is wrapped in <Layout>. Keep these props.
 import { AsyncLocalStorage } from "node:async_hooks";
 import type { Child } from "hono/jsx";
 

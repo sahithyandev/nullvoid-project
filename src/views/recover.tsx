@@ -1,4 +1,4 @@
-// Owner: M5. The recovery form: username, password and one recovery code.
+// The recovery form: username, password and one recovery code.
 import { Layout } from "./layout";
 import { ErrorBox, ErrorScript, ShowPassword } from "./login";
 

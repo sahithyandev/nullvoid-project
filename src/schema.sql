@@ -3,7 +3,6 @@
 -- Column names are the shared contract (see README.md). Adding columns and
 -- indexes is fine; renaming or removing columns needs the whole team's agreement.
 
--- M1
 CREATE TABLE IF NOT EXISTS users (
   id            INTEGER PRIMARY KEY,
   username      TEXT NOT NULL UNIQUE,
@@ -12,7 +11,7 @@ CREATE TABLE IF NOT EXISTS users (
   locked_until  INTEGER NOT NULL DEFAULT 0
 );
 
--- Shared. Written only by src/session.ts.
+-- Written only by src/session.ts.
 CREATE TABLE IF NOT EXISTS sessions (
   id         TEXT PRIMARY KEY,
   user_id    INTEGER REFERENCES users(id) ON DELETE CASCADE,
@@ -21,7 +20,7 @@ CREATE TABLE IF NOT EXISTS sessions (
   expires_at INTEGER NOT NULL
 );
 
--- M2 inserts kind='passkey', M3 inserts kind='security_key', M5 only sets revoked_at.
+-- Passkeys use kind='passkey', security keys use kind='security_key'. Revoking only sets revoked_at.
 CREATE TABLE IF NOT EXISTS credentials (
   id            INTEGER PRIMARY KEY,
   user_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -35,7 +34,7 @@ CREATE TABLE IF NOT EXISTS credentials (
   revoked_at    INTEGER
 );
 
--- M2 and M3. A row is deleted before it is verified, so it is single use.
+-- A row is deleted before it is verified, so it is single use.
 CREATE TABLE IF NOT EXISTS challenges (
   id         INTEGER PRIMARY KEY,
   user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -44,7 +43,7 @@ CREATE TABLE IF NOT EXISTS challenges (
   expires_at INTEGER NOT NULL
 );
 
--- M5. Only hashes are stored.
+-- Only hashes are stored.
 CREATE TABLE IF NOT EXISTS recovery_codes (
   id        INTEGER PRIMARY KEY,
   user_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,

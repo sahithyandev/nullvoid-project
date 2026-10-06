@@ -1,4 +1,4 @@
-// Owner: M2. Routes: /passkey/register*. Mounted by src/routes/passkey.ts.
+// Routes: /passkey/register*. Mounted by src/routes/passkey.ts.
 import { Hono } from "hono";
 import { generateRegistrationOptions, verifyRegistrationResponse, type RegistrationResponseJSON } from "@simplewebauthn/server";
 import { config } from "../config";

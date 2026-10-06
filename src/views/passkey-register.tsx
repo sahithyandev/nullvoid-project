@@ -1,4 +1,4 @@
-// Owner: M2. The passkey registration page. The script is public/js/passkey-register.js.
+// The passkey registration page. The script is public/js/passkey-register.js.
 import { config } from "../config";
 import { Layout } from "./layout";
 

@@ -1,4 +1,4 @@
-// Owner: M5. The device list: rename and revoke credentials.
+// The device list: rename and revoke credentials.
 import { Layout } from "./layout";
 
 export type Device = { id: number; kind: "passkey" | "security_key"; label: string; created_at: number; revoked_at: number | null };

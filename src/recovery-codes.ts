@@ -1,4 +1,4 @@
-// Owner: M5. Recovery codes: made on request, stored only as hashes, single use. Never log a code.
+// Recovery codes: made on request, stored only as hashes, single use. Never log a code.
 import { db } from "./db";
 
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O/1/I

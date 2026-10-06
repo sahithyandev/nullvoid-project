@@ -1,4 +1,4 @@
-// Owner: M5. Routes: /account/recovery-codes. Mounted by src/routes/account.ts.
+// Routes: /account/recovery-codes. Mounted by src/routes/account.ts.
 import { Hono } from "hono";
 import { requireFull, type AppEnv } from "../guards";
 import { generateCodes } from "../recovery-codes";

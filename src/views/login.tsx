@@ -1,4 +1,4 @@
-// Owner: M1. The password form, and the styling and scripts shared with the register page.
+// The password form, and the styling and scripts shared with the register page.
 import { Layout } from "./layout";
 
 export function ErrorBox({ error }: { error?: string }) {

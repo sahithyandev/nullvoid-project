@@ -1,4 +1,4 @@
-// Owner: M5. Make recovery codes, and show a new set once.
+// Make recovery codes, and show a new set once.
 import { Layout } from "./layout";
 
 export function RecoveryCodesPage({ codes }: { codes?: string[] }) {

@@ -1,4 +1,4 @@
-// Owner: M1. The account creation form.
+// The account creation form.
 import { Layout } from "./layout";
 import { ErrorBox, ErrorScript, ShowPassword } from "./login";
 
