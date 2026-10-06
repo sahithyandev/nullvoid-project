@@ -26,3 +26,14 @@ test("page shell contains an aria-live status region", async () => {
   expect(html).toContain('role="status"');
   expect(html).toContain('aria-live="polite"');
 });
+test("nav shows sign in when anonymous, sign out when fully signed in", async () => {
+  const anon = await (await app.request("/")).text();
+  expect(anon.split("</header>")[0]).not.toContain("<nav");
+
+  const { db } = await import("../src/db");
+  const uid = db.query("INSERT INTO users (username, password_hash) VALUES ('navtest', 'x') RETURNING id").get() as { id: number };
+  db.query("INSERT INTO sessions (id, user_id, state, created_at, expires_at) VALUES ('navsid', ?, 'full', 0, ?)").run(uid.id, Date.now() + 60000);
+  const html = await (await app.request("/", { headers: { cookie: "sid=navsid" } })).text();
+  expect(html.split("</header>")[0]).toContain('action="/logout"');
+  expect(html.split("</header>")[0]).not.toContain('href="/login"');
+});
