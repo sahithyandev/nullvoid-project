@@ -7,13 +7,19 @@ export function RecoveryCodesPage({ codes }: { codes?: string[] }) {
       {codes ? (
         <>
           <p>Your new recovery codes are below. They are shown only once. Each code works once. Store them somewhere safe.</p>
-          <ol aria-label="Recovery codes">
+          <pre aria-label="Recovery codes">
             {codes.map((c) => (
-              <li>
+              <>
                 <code>{c}</code>
-              </li>
+                {"\n"}
+              </>
             ))}
-          </ol>
+          </pre>
+          <p>
+            <a class="button" download="nullvoid-recovery-codes.txt" href={`data:text/plain;charset=utf-8,${encodeURIComponent(codes.join("\n") + "\n")}`}>
+              Download recovery codes
+            </a>
+          </p>
         </>
       ) : (
         <>
