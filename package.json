@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Multi-factor authentication for visually impaired users",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "engines": {
     "bun": ">=1.4.2"

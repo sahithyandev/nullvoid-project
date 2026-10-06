@@ -66,7 +66,7 @@ Stack: Bun, Hono with server-rendered `hono/jsx` pages, `bun:sqlite`, Argon2id, 
 | Accessible interface | `src/views/layout.tsx`, `public/js/a11y.js`, `public/js/nfc-guidance.js` | `test/layout.test.ts`, `test/pages.test.ts`, `test/nfc-guidance.test.ts` |
 | Rate limiting | `src/attempts.ts` | `test/password.test.ts` |
 | Account recovery | `src/recovery-codes.ts`, `src/recovery-limit.ts` | `test/recovery.test.ts`, `test/devices.test.ts` |
-| WCAG 2.2 AA, keyboard and screen reader | all pages | manual plan in [`docs/testing.md`](docs/testing.md) |
+| WCAG 2.2 AA, keyboard and screen reader | all pages | manual testing |
 
 ## Architecture
 
@@ -78,25 +78,6 @@ Stack: Bun, Hono with server-rendered `hono/jsx` pages, `bun:sqlite`, Argon2id, 
 | Passkey (WebAuthn)    | Phishing-resistant credential held on the user's device, unlocked by biometrics or a device PIN.                                                          |
 | NFC FIDO2 key         | Physical key, tapped against the device. No screen interaction needed.                                                                                    |
 | Database              | Accounts, password hashes, public keys and credential IDs. No biometrics.                                                                                 |
-
-## Project layout
-
-| Path                                             | Purpose                                                                                                                                      |
-| :----------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------- |
-| `server.ts`, `src/app.ts`                        | Entry point and the Hono app. `app.ts` mounts each router and serves static files, including Oat from `node_modules`                         |
-| `src/config.ts`                                  | RP name, RP ID, origin, session and challenge lifetimes                                                                                      |
-| `src/db.ts`, `src/schema.sql`                    | Database opened on start-up, every table in one SQL file                                                                                     |
-| `src/session.ts`                                 | `getSession`, `startPasswordOk`, `completeLogin`, `startRecovery`, `endSession`, `endUserSessions`                                           |
-| `src/guards.ts`                                  | `requirePasswordOk`, `requireFull`, `requireRecovery`, `requirePasswordOkOrRecovery`                                                         |
-| `src/password.ts`, `src/attempts.ts`             | Password rules and hashing, the login lockout                                                                                                |
-| `src/recovery-codes.ts`, `src/recovery-limit.ts` | Recovery code generation and check, the separate recovery limiter                                                                            |
-| `src/routes/`                                    | One router per area: `login`, `passkey` (`-register`, `-login`), `security-key`, `pages`, `account` (`recovery-codes`, `devices`), `recover` |
-| `src/views/`                                     | Server-rendered `.tsx` pages and the `Layout` shell                                                                                          |
-| `public/js/`                                     | Browser scripts: `a11y.js`, `passkey-*.js`, `security-key.js`, `nfc-guidance.js`                                                             |
-| `public/css/style.css`                           | The few overrides Oat lacks                                                                                                                  |
-| `src/dev/`                                       | Test helpers: software authenticator, `fakeSession`, `fakeUser`, `fakeCredential`                                                            |
-| `test/`, `src/*.test.ts`                         | Automated tests                                                                                                                              |
-| `docs/`                                          | Manual test plan and threat table                                                                                     |
 
 ## Authentication flow
 
@@ -227,7 +208,7 @@ Pages are styled by [Oat](https://oat.ink) (`@knadh/oat`), a classless library t
 - A lost device or NFC key needs a separate recovery path.
 - A fully compromised device cannot be trusted whatever accessibility is provided.
 
-**Testing.** Screen readers across browsers, keyboard-only navigation, text-to-speech and audio checks at every stage, and end-to-end runs with visually impaired users for both paths. The plan, setups and result columns are in [`docs/testing.md`](docs/testing.md). Threats map to test files in [`docs/threats.md`](docs/threats.md).
+**Testing.** Screen readers across browsers, keyboard-only navigation, text-to-speech and audio checks at every stage, and end-to-end runs with visually impaired users for both paths. Threats map to test files in [`docs/threats.md`](docs/threats.md).
 
 ## Assumptions and constraints
 
@@ -256,16 +237,14 @@ Checklist for changes:
 
 ## Team
 
-| Index No. | Team Member                                                                           | Area                                                                  |
-| :-------- | :------------------------------------------------------------------------------------ | :-------------------------------------------------------------------- |
-| 230199V   | Genkeswaran N. ([nalinasai](https://github.com/nalinasai))                            | Accessible interface, chooser, enrolment and account pages            |
-| 230304R   | Jegarashan B. ([babijana](https://github.com/babijana))                               | Recovery codes, device list and revocation, test documents |
-| 230345R   | Krishnaprashanth S. ([Krishnaprashanth-dev](https://github.com/Krishnaprashanth-dev)) | Passkey second factor                                                 |
-| 230557T   | Sahithyan K. ([sahithyandev](https://github.com/sahithyandev))                        | Username, password and rate limiting                                  |
-| 230667F   | Virusan T. ([virusan-t](https://github.com/virusan-t))                                | NFC security key and NFC guidance                                     |
+| Index No. | Team Member                                                                           |
+| :-------- | :------------------------------------------------------------------------------------ |
+| 230199V   | Genkeswaran N. ([nalinasai](https://github.com/nalinasai))                            |
+| 230304R   | Jegarashan B. ([babijana](https://github.com/babijana))                               |
+| 230345R   | Krishnaprashanth S. ([Krishnaprashanth-dev](https://github.com/Krishnaprashanth-dev)) |
+| 230557T   | Sahithyan K. ([sahithyandev](https://github.com/sahithyandev))                        |
+| 230667F   | Virusan T. ([virusan-t](https://github.com/virusan-t))                                |
 
-## References
+## License
 
-1. Microsoft Learn. "Accessibility considerations for authentication methods." <https://learn.microsoft.com/en-us/entra/identity/authentication/accessibility/authentication-methods-accessibility>
-2. LoginRadius. "Passkeys vs Passwords vs MFA Authentication." <https://www.loginradius.com/blog/identity/passkeys-vs-passwords-vs-mfa-authentication>
-3. W3C. WCAG 2.2, success criterion 3.3.8 Accessible Authentication.
+[MIT](LICENSE)
