@@ -1,6 +1,6 @@
 -- The whole database. Run on every start-up, so every table uses
 -- CREATE TABLE IF NOT EXISTS. To start over, delete data/app.db.
--- Column names are the shared contract (see PLAN.md). Adding columns and
+-- Column names are the shared contract (see README.md). Adding columns and
 -- indexes is fine; renaming or removing columns needs the whole team's agreement.
 
 -- M1
