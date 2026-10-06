@@ -55,6 +55,9 @@ export function LoginPage({ error, username = "" }: { error?: string; username?:
       <p>
         No account? <a href="/register">Create one</a>
       </p>
+      <p>
+        Lost your phone or security key? <a href="/recover">Recover your account</a>
+      </p>
       {error && <ErrorScript message={error} />}
     </Layout>
   );
