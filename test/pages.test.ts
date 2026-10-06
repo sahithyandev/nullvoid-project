@@ -44,3 +44,10 @@ test("the pages offer a sign out button", async () => {
     expect(await (await get(path, state)).text()).toContain('action="/logout"');
   }
 });
+
+test("/ is a public home page linking to sign in, register and recovery", async () => {
+  const res = await get("/");
+  expect(res.status).toBe(200);
+  const html = await res.text();
+  for (const link of ['href="/login"', 'href="/register"', 'href="/recover"']) expect(html).toContain(link);
+});
