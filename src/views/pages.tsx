@@ -7,19 +7,32 @@ const SignOut = () => (
   </form>
 );
 
+type CardItem = { title: string; text: string; href: string; label: string };
+
+const Cards = ({ items, heading: H }: { items: CardItem[]; heading: "h2" | "h3" }) => (
+  <div class="row">
+    {items.map((i) => (
+      <article class="card vstack col-6">
+        <H>{i.title}</H>
+        <p>{i.text}</p>
+        <a href={i.href} class="button w-100">{i.label}</a>
+      </article>
+    ))}
+  </div>
+);
+
 function Chooser({ title, intro, passkey, secKey }: { title: string; intro: string; passkey: string; secKey: string }) {
   return (
     <Layout title={title}>
       <p>{intro}</p>
       <h2>Select an authentication method</h2>
-      <ul>
-        <li>
-          <a href={passkey}>Passkey</a>: use the fingerprint, face or screen lock on this device.
-        </li>
-        <li>
-          <a href={secKey}>NFC security key</a>: hold a FIDO2 security key against your device.
-        </li>
-      </ul>
+      <Cards
+        heading="h3"
+        items={[
+          { title: "Passkey", text: "Use the fingerprint, face or screen lock on this device.", href: passkey, label: "Use a passkey" },
+          { title: "NFC security key", text: "Hold a FIDO2 security key against your device.", href: secKey, label: "Use a security key" },
+        ]}
+      />
       <SignOut />
     </Layout>
   );
@@ -54,7 +67,7 @@ export const HomePage = () => (
 
     <h2>New here?</h2>
     <p>
-      <a href="/register" role="button">Create an account</a>
+      <a href="/register" class="button">Create an account</a>
     </p>
     <ol>
       <li>Choose a username and password.</li>
@@ -64,7 +77,7 @@ export const HomePage = () => (
 
     <h2>Already have an account?</h2>
     <p>
-      <a href="/login" role="button">Sign in</a>
+      <a href="/login" class="button">Sign in</a>
     </p>
     <ol>
       <li>Enter your username and password.</li>
